@@ -1,3 +1,5 @@
+# for the dynamic operation of the network, that is, when performing the
+# time modeling
 
 class WPP(object):
     def __init__(self, power_plant: str, location: tuple, operating_capacity: float, fuel_type='Wind',
@@ -32,4 +34,8 @@ class NGPP(object):
 class Bilateral_Contract(object):
     def __init__(self):
         pass
+
+
+class Pairing(object):
+    pass
 
