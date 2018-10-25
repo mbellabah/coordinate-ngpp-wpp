@@ -4,13 +4,10 @@ import numpy as np
 import os
 
 from mpl_toolkits.basemap import Basemap
+###############################################################################
 
 
-# MARK: Setting up the workspace
-current_working_dir = os.getcwd()
-os.chdir(current_working_dir+"/Data")
-
-
+# MARK: Excel manipulation, and plotting
 def load_pd(file_name, verbosity=False):
     data_frame = pd.read_excel(file_name, sheet_name=0)
     if verbosity:
@@ -19,24 +16,19 @@ def load_pd(file_name, verbosity=False):
     return data_frame
 
 
-def build_agents() -> None:
-    wpp_f = load_pd('wind_power_producers.xls')
-    ngpp_f = load_pd('natural_gas_power_producers.xls')
-
-    return wpp_f, ngpp_f
-
-
-def plot_agents(wpp_f, ngpp_f, des_ngpps=[], des_wpps=[], res='i', lllon=-74.13, lllat=39.74,
-                urlon=-66.58, urlat=47.56) -> object:
+def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', lllon=-74.13, lllat=39.74, urlon=-66.58, urlat=47.56) -> object:
     '''
     Plot the desired agents and annotate them . . .
     http://boundingbox.klokantech.com/ on the New England Area
     westlimit=-75.13; southlimit=39.74; eastlimit=-66.58; northlimit=47.56
     '''
 
-    # figure, axes = plt.subplots(figsize=(10, 20))
-    MAP = Basemap(resolution=res, projection='merc', lat_0=(lllat - urlon)/2, lon_0=(lllat - urlat)/2,
-                llcrnrlon=lllon, llcrnrlat=lllat, urcrnrlon=urlon, urcrnrlat=urlat)
+    assert isinstance(wpp_f, pd.DataFrame), TypeError
+    assert isinstance(ngpp_f, pd.DataFrame), TypeError
+    assert isinstance(p_nodes_f, pd.DataFrame), TypeError
+
+
+    MAP = Basemap(resolution=res, projection='merc', lat_0=(lllat - urlon)/2, lon_0=(lllat - urlat)/2, llcrnrlon=lllon, llcrnrlat=lllat, urcrnrlon=urlon, urcrnrlat=urlat)
 
     MAP.drawmapboundary(fill_color='#46bcec')
     MAP.fillcontinents(color='#f2f2f2', lake_color='#46bcec')
@@ -48,7 +40,11 @@ def plot_agents(wpp_f, ngpp_f, des_ngpps=[], des_wpps=[], res='i', lllon=-74.13,
     MAP.plot(wpp_longitudes, wpp_latitudes, 'bo', markersize=3, label='WPPs')
     MAP.plot(ngpp_longitudes, ngpp_latitudes, 'ro', markersize=3, label='NGPPs')
 
-    plt.title('NGPPs and WPPs in the New England Region')
+    p_nodes_longitudes, p_nodes_latitudes = MAP(p_nodes_f['Longitude'].values, p_nodes_f['Latitude'].values)
+    MAP.plot(p_nodes_longitudes, p_nodes_latitudes, 'cs', markersize=2, label='Pricing Nodes')
+
+
+    plt.title('NGPPs, WPPs and Pricing Nodes in the New England Region')
     plt.legend()
 
     def annotate_agents(desired_agents_indices, agent_type) -> None:
@@ -69,19 +65,35 @@ def plot_agents(wpp_f, ngpp_f, des_ngpps=[], des_wpps=[], res='i', lllon=-74.13,
     # annotate desired wind and gas power plants
     annotate_agents(des_wpps, agent_type='wind')
     annotate_agents(des_ngpps, agent_type='gas')
+
     plt.show()
 
 
-def main(des_wpps=[], des_ngpps=[], verbosity=False):
-    wpp_f, ngpp_f = build_agents()
+# MARK: Functions to do with agents
+def build_agents() -> None:
+    wpp_f = load_pd('wind_power_producers.xls')
+    ngpp_f = load_pd('natural_gas_power_producers.xls')
+    p_nodes_f = load_pd('ISO_NE_pnode_coords.xlsx', verbosity=False)
+
+    return wpp_f, ngpp_f, p_nodes_f
+
+
+def helper_main(des_wpps: np.array =[], des_ngpps: np.array =[], verbosity=False):
+
+    assert isinstance(des_wpps, np.array) and des_wpps.size, 'Provide indices of desired WPPs'
+    assert isinstance(des_ngpps, np.array) and des_ngpps.size, 'Provide indices of desired NGPPs'
+
+    wpp_f, ngpp_f, p_nodes_f = build_agents()
 
     if verbosity:
         print(f'WPP dataframe: {wpp_f}')
         print(f'NGPP dataframe: {ngpp_f}')
+        print(f'P_Nodes dataframe: {p_nodes_f}')
 
-    if not (des_ngpps or des_ngpps):
-        des_ngpps = np.arange(len(ngpp_f))
-        des_wpps = np.arange(len(wpp_f))
+    # Currently doesn't work, so do not use
+    # if not (des_ngpps or des_ngpps):
+    #     des_ngpps = np.arange(len(ngpp_f) - 1)
+    #     des_wpps = np.arange(len(wpp_f) - 1)
 
 
     # MARK: Perform the filtering of the NGPPs and WPPs
@@ -90,15 +102,26 @@ def main(des_wpps=[], des_ngpps=[], verbosity=False):
         criteria = ngpp[tech_type] == des_tech
         return ngpp[criteria]
 
+    # filter the WPPs on the basis of distance to each other (bundle)
+
     ngpp_f = filter_tech_ngpp(ngpp_f)
 
     # compute the distances between the ngpps and the wpps, find the k closest pairings
 
-
     # MARK: Perform the final plotting
-    plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
+    plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
 
+
+# -> MARK: Interpretation of the agents
+def fractional_capacity():
+    # compute the fractional capacity that could engaged
+    # in a reliability contract
+    return None
 
 
 if __name__ == '__main__':
-    main(verbosity=True)
+    # MARK: Setting up the workspace
+    current_working_dir = os.getcwd()
+    os.chdir(current_working_dir + "/Data")
+
+    helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), verbosity=False)
