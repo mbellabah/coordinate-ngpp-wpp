@@ -20,7 +20,7 @@ def load_pd(file_name):
     return pd.read_excel(file_name)
 
 
-wpp_f = load_pd('wind_power_producers.xls')
+# wpp_f = load_pd('wind_power_producers.xls')
 
 
 # MARK: find the relevant coords of each power producer
@@ -35,5 +35,5 @@ def find_coord(place: str, verbosity=False) -> str:
         return "Can't find", place
 
 
-print(find_coord('Canton Mountain Wind Maine', True))
+print(find_coord('UN.GULFISLD34.5GULF', True))
 

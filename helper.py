@@ -6,6 +6,11 @@ import os
 from mpl_toolkits.basemap import Basemap
 ###############################################################################
 
+# TODO: [x] Bundle the WPPs
+# TODO: -
+
+################################################################################
+
 
 # MARK: Excel manipulation, and plotting
 def load_pd(file_name, verbosity=False):
@@ -14,6 +19,22 @@ def load_pd(file_name, verbosity=False):
         print(data_frame)
 
     return data_frame
+
+
+def build_agents() -> None:
+    wpp_f = load_pd('wind_power_producers.xls')
+    ngpp_f = load_pd('natural_gas_power_producers.xls')
+    p_nodes_f = load_pd('ISO_NE_pnode_coords.xlsx', verbosity=False)
+
+    # bundle the WPPs
+    def bundle(wpp_f, criteria='Power Plant') -> pd.DataFrame:
+        wpp_f['Operating Capacity'] = wpp_f.groupby([criteria])['Operating Capacity'].transform('sum')
+
+        filtered_wpp_f = wpp_f.drop_duplicates(subset=[criteria])
+        return filtered_wpp_f
+
+    wpp_f = bundle(wpp_f)
+    return wpp_f, ngpp_f, p_nodes_f
 
 
 def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', lllon=-74.13, lllat=39.74, urlon=-66.58, urlat=47.56) -> object:
@@ -68,20 +89,15 @@ def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', ll
 
     plt.show()
 
+###############################################################################
+
 
 # MARK: Functions to do with agents
-def build_agents() -> None:
-    wpp_f = load_pd('wind_power_producers.xls')
-    ngpp_f = load_pd('natural_gas_power_producers.xls')
-    p_nodes_f = load_pd('ISO_NE_pnode_coords.xlsx', verbosity=False)
 
-    return wpp_f, ngpp_f, p_nodes_f
+def helper_main(des_wpps: np.array =[], des_ngpps: np.array =[], verbosity=False, to_plot=False):
 
-
-def helper_main(des_wpps: np.array =[], des_ngpps: np.array =[], verbosity=False):
-
-    assert isinstance(des_wpps, np.array) and des_wpps.size, 'Provide indices of desired WPPs'
-    assert isinstance(des_ngpps, np.array) and des_ngpps.size, 'Provide indices of desired NGPPs'
+    assert des_wpps.size, 'Provide indices of desired WPPs'
+    assert des_ngpps.size, 'Provide indices of desired NGPPs'
 
     wpp_f, ngpp_f, p_nodes_f = build_agents()
 
@@ -102,14 +118,13 @@ def helper_main(des_wpps: np.array =[], des_ngpps: np.array =[], verbosity=False
         criteria = ngpp[tech_type] == des_tech
         return ngpp[criteria]
 
-    # filter the WPPs on the basis of distance to each other (bundle)
 
     ngpp_f = filter_tech_ngpp(ngpp_f)
 
-    # compute the distances between the ngpps and the wpps, find the k closest pairings
+    # TODO: compute the distances between the ngpps and the wpps, find the k closest pairings
 
-    # MARK: Perform the final plotting
-    plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
+    if to_plot:
+        plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
 
 
 # -> MARK: Interpretation of the agents
@@ -124,4 +139,4 @@ if __name__ == '__main__':
     current_working_dir = os.getcwd()
     os.chdir(current_working_dir + "/Data")
 
-    helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), verbosity=False)
+    helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), verbosity=False, to_plot=True)
