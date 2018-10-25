@@ -7,7 +7,7 @@ from mpl_toolkits.basemap import Basemap
 ###############################################################################
 
 # TODO: [x] Bundle the WPPs
-# TODO: -
+# TODO: [] Calculate the relavant data regarding the pricing nodes
 
 ################################################################################
 
@@ -29,11 +29,18 @@ def build_agents() -> None:
     # bundle the WPPs
     def bundle(wpp_f, criteria='Power Plant') -> pd.DataFrame:
         wpp_f['Operating Capacity'] = wpp_f.groupby([criteria])['Operating Capacity'].transform('sum')
-
         filtered_wpp_f = wpp_f.drop_duplicates(subset=[criteria])
         return filtered_wpp_f
 
+    # filter the teech type of the NGPPs
+    def filter_tech_ngpp(ngpp, tech_type='Technology Type', des_tech='Combined Cycle') -> np.array:
+        criteria = ngpp[tech_type] == des_tech
+        return ngpp[criteria]
+
+
+    ngpp_f = filter_tech_ngpp(ngpp_f)
     wpp_f = bundle(wpp_f)
+
     return wpp_f, ngpp_f, p_nodes_f
 
 
@@ -63,7 +70,6 @@ def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', ll
 
     p_nodes_longitudes, p_nodes_latitudes = MAP(p_nodes_f['Longitude'].values, p_nodes_f['Latitude'].values)
     MAP.plot(p_nodes_longitudes, p_nodes_latitudes, 'cs', markersize=2, label='Pricing Nodes')
-
 
     plt.title('NGPPs, WPPs and Pricing Nodes in the New England Region')
     plt.legend()
@@ -111,15 +117,6 @@ def helper_main(des_wpps: np.array =[], des_ngpps: np.array =[], verbosity=False
     #     des_ngpps = np.arange(len(ngpp_f) - 1)
     #     des_wpps = np.arange(len(wpp_f) - 1)
 
-
-    # MARK: Perform the filtering of the NGPPs and WPPs
-    # filter the NGPPs on the basis of technology
-    def filter_tech_ngpp(ngpp, tech_type='Technology Type', des_tech='Combined Cycle') -> np.array:
-        criteria = ngpp[tech_type] == des_tech
-        return ngpp[criteria]
-
-
-    ngpp_f = filter_tech_ngpp(ngpp_f)
 
     # TODO: compute the distances between the ngpps and the wpps, find the k closest pairings
 
