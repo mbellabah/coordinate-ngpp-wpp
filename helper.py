@@ -8,9 +8,9 @@ from scipy.spatial.distance import cdist
 from geopy.distance import vincenty
 from mpl_toolkits.basemap import Basemap
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.propagate = True
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger()
 
 
 def trackcalls(func):
@@ -23,6 +23,16 @@ def trackcalls(func):
 
     return wrapper
 
+
+def disable_logging(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        previousloglevel = log.getEffectiveLevel()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            log.setLevel(previousloglevel)
+    return inner
 
 ###############################################################################
 
@@ -170,11 +180,11 @@ def find_closest_pricing_node(pnodesf=None, wppf=None, ngppf=None, verbosity=Fal
     wpp_closest_pairs = stack_pairs(wpp_closest_pairs_args, 'wind')
     ngpp_closest_pairs = stack_pairs(ngpp_closest_pairs_args, 'gas')
 
+    log.debug(f'Closest P-nodes to WPPs: {wpp_closest_pairs}')
+    log.debug(f'Closest P-nodes to NGPPs: {ngpp_closest_pairs}')
 
-    logger.info(f'Closest P-nodes to WPPs: {wpp_closest_pairs}')
-    logger.info(f'Closest P-nodes to NGPPs: {ngpp_closest_pairs}')
 
-
+@disable_logging
 def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
 
     assert des_wpps.size, 'Provide indices of desired WPPs'
@@ -182,9 +192,9 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
 
     wpp_f, ngpp_f, p_nodes_f = build_agents()
 
-    logger.info(f'WPP dataframe: {wpp_f}')
-    logger.info(f'NGPP dataframe: {ngpp_f}')
-    logger.info(f'P_Nodes dataframe: {p_nodes_f}')
+    log.debug(f'WPP dataframe: {wpp_f}')
+    log.debug(f'NGPP dataframe: {ngpp_f}')
+    log.debug(f'P_Nodes dataframe: {p_nodes_f}')
 
     # Currently doesn't work, so do not use
     # if not (des_ngpps or des_ngpps):
