@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from helper import load_pd
 import os
 
@@ -6,7 +7,7 @@ import os
 
 current_working_dir = os.getcwd()
 
-def compute_data_details(p_node_1: np.array, p_node_2: np.array):
+def compute_data_details(p_node_1: np.array, p_node_2: np.array) -> bool:
     # compute std dev, min, max, mean
     # be able to plot the differences between two nodes
     return None
