@@ -258,9 +258,6 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
     if to_plot:
         plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
 
-    if plot_agents.has_been_called:
-        plt.show()
-
 
 @suspendlogging
 def construct_year_chart(node_names_list: List[str], write_to_excel: bool = False) -> Dict[str, pd.DataFrame]:
@@ -443,6 +440,5 @@ if __name__ == '__main__':
 
     helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), to_plot=False)
 
-    plt.show()
-
-    # construct_year_chart(['UN.FRNKLNSQ11.510CC'], write_to_excel=True)
+    if plot_agents.has_been_called or construct_desired_tables.has_been_called:
+        plt.show()
