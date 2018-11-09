@@ -7,10 +7,12 @@ import functools
 from scipy.spatial.distance import cdist
 from geopy.distance import vincenty
 from mpl_toolkits.basemap import Basemap
+from typing import List, Dict
+import collections
 
-
-logging.basicConfig(level=logging.DEBUG)
-log = logging.getLogger()
+# Exception Handling
+from xlrd import XLRDError
+from pandas.errors import ParserError
 
 
 def trackcalls(func):
@@ -24,15 +26,15 @@ def trackcalls(func):
     return wrapper
 
 
-def disable_logging(func):
+def suspendlogging(func):
     @functools.wraps(func)
-    def inner(*args, **kwargs):
-        previousloglevel = log.getEffectiveLevel()
+    def wrapper(*args, **kwargs):
+        logging.disable(logging.DEBUG)
         try:
             return func(*args, **kwargs)
         finally:
-            log.setLevel(previousloglevel)
-    return inner
+            logging.disable(logging.NOTSET)
+    return wrapper
 
 ###############################################################################
 
@@ -43,13 +45,36 @@ def disable_logging(func):
 ################################################################################
 
 
-# MARK: Excel manipulation, and plotting
-def load_pd(file_name, verbosity=False):
-    data_frame = pd.read_excel(file_name, sheet_name=0)
-    if verbosity:
-        print(data_frame)
+# MARK: Helper Functions
+def load_pd(file_name):
 
-    return data_frame
+    excel_file_type = ('.xls', '.xlsx', '.XLS', '.XLSX')
+    csv_file_type = ('.csv', '.CSV')
+
+    if file_name.endswith(excel_file_type):
+        try:
+            return pd.read_excel(file_name, sheet_name=0)
+        except XLRDError:
+            return None
+
+    elif file_name.endswith(csv_file_type):
+        try:
+            return pd.read_csv(file_name, skiprows=[0, 1, 2, 3, 5])     # skip rows to avoid the nonsense at the top
+        except ParserError as e:
+            log.debug(e)
+            return None
+
+    else:
+        log.debug('Unknown file type')
+        return None
+
+
+def closest_point(point, others):
+    # return the arguments of the closest coord in others relative to point
+    try:
+        return cdist([point], others, lambda u, v: vincenty(u, v).kilometers).argmin()
+    except KeyError:
+        return None
 
 
 def build_agents() -> None:
@@ -129,10 +154,11 @@ def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', ll
 
 # MARK: Functions to do with agents
 
-def find_closest_pricing_node(pnodesf=None, wppf=None, ngppf=None, verbosity=False):
+# @suspendlogging
+def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
     assert pnodesf is not None, ValueError('Provide the pricing node file')
 
-    # First find the closest pricing node for each ngpp -- # <Longitude>, <Latitude>, <Plant Key>
+    # First find the closest pricing node for each agent -- # <Longitude>, <Latitude>, <Plant Key>
     np_wpp = np.array([wppf['Longitude'], wppf['Latitude'], wppf['Power Plant']]).T
     np_ngpp = np.array([ngppf['Longitude'], ngppf['Latitude'], ngppf['Power Plant']]).T
     np_pnodes = np.array([pnodesf['Longitude'], pnodesf['Latitude'], pnodesf['LMP Name']]).T
@@ -148,15 +174,10 @@ def find_closest_pricing_node(pnodesf=None, wppf=None, ngppf=None, verbosity=Fal
     ngpp_names = np_ngpp[:, 2]
     ngpp_names = np.reshape(ngpp_names, (ngpp_names.size, 1))
     pnode_names = np_pnodes[:, 2]
+    pnode_names = np.reshape(pnode_names, (pnode_names.size, 1))
 
-    def closest_point(point, others):
-        # return the arguments of the closest coord in others relative to point
-        try:
-            return cdist([point], others, lambda u, v: vincenty(u, v).kilometers).argmin()
-        except KeyError:
-            return None
+    log.debug('\nComputing the closest pricing nodes . . .')
 
-    if verbosity: print('\nComputing the closest pricing nodes . . .')
     wpp_closest_pairs_args = np.apply_along_axis(
         closest_point, 1, wpp_coords, pnodes_coords
     )
@@ -166,25 +187,50 @@ def find_closest_pricing_node(pnodesf=None, wppf=None, ngppf=None, verbosity=Fal
 
     # Stack the pairs, confirm using snl
     def stack_pairs(pair_args, pair_type: str):
-        closest_pnodes = np_pnodes[pair_args][:, 2]
-        closest_pnodes = np.reshape(closest_pnodes, (closest_pnodes.size, 1))
+        closest_pnodes = np_pnodes[pair_args]
+        # closest_pnodes = np.reshape(closest_pnodes, (closest_pnodes.size, 1))
 
         if pair_type == 'wind':
             return np.concatenate((wpp_names, closest_pnodes), axis=1)
         elif pair_type == 'gas':
             return np.concatenate((ngpp_names, closest_pnodes), axis=1)
+        elif pair_type == 'node':
+            return np.concatenate((pnode_names, closest_pnodes), axis=1)
         else:
             raise ValueError(f'{pair_type} does not exist!')
 
+        # output: <power plant> <node_long> <node_lat> <node_name>
+
     # Got the pricing node and agent pairs
-    wpp_closest_pairs = stack_pairs(wpp_closest_pairs_args, 'wind')
-    ngpp_closest_pairs = stack_pairs(ngpp_closest_pairs_args, 'gas')
+    wpp_pricing_node_pairs = stack_pairs(wpp_closest_pairs_args, 'wind')
+    ngpp_pricing_node_pairs = stack_pairs(ngpp_closest_pairs_args, 'gas')
 
-    log.debug(f'Closest P-nodes to WPPs: {wpp_closest_pairs}')
-    log.debug(f'Closest P-nodes to NGPPs: {ngpp_closest_pairs}')
+    log.debug(f'WPP_Pairs {wpp_pricing_node_pairs}')
+    log.debug(f'NGPP_Pairs {ngpp_pricing_node_pairs}')
 
 
-@disable_logging
+
+    ##################################################################################
+    pnodes_wpp_names_coords = wpp_pricing_node_pairs[:, 1:3]
+    pnodes_ngpp_names_coords = ngpp_pricing_node_pairs[:, 1:3]
+
+
+    log.debug(f'names_coords_wpp {pnodes_wpp_names_coords}')
+    log.debug(f'names_coords_ngpp {pnodes_ngpp_names_coords}')
+
+    pairs_within_selves_args = np.apply_along_axis(
+        closest_point, 1,
+        pnodes_wpp_names_coords,
+        pnodes_ngpp_names_coords
+    )
+
+    inter_node_agent_pairings = np.concatenate((wpp_pricing_node_pairs, ngpp_pricing_node_pairs[pairs_within_selves_args]), axis=1)
+    log.debug(f'inter_node_agent_pairings {inter_node_agent_pairings}')
+
+    return inter_node_agent_pairings
+
+
+# @suspendlogging
 def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
 
     assert des_wpps.size, 'Provide indices of desired WPPs'
@@ -201,14 +247,88 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
     #     des_ngpps = np.arange(len(ngpp_f) - 1)
     #     des_wpps = np.arange(len(wpp_f) - 1)
 
-    # TODO: compute the distances between the ngpps and the wpps, find the k closest pairings
-    find_closest_pricing_node(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f, verbosity=True)
+    find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
 
     if to_plot:
         plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
 
     if plot_agents.has_been_called:
         plt.show()
+
+
+@suspendlogging
+def construct_year_chart(node_names_list: List[str], write_to_excel: bool = False) -> Dict[str, pd.DataFrame]:
+    ''' Returns an excel file with the excel file '''
+
+    os.chdir(os.getcwd() + '/2016_realtime_hourly_dataset')
+    curr_working_dir = os.getcwd()
+
+    output_df = None
+    infer_headers_flag = False
+    headers = []
+    df_name = None
+    desired_key = 'Location Name'
+    frames = []
+
+    node_pd_dict = collections.defaultdict(list)
+
+    # assume infer_headers = ['H', 'Date', 'Hour Ending', 'Location ID', 'Location Name', 'Location Type', 'Locational Marginal Price', 'Energy Component', 'Congestion Component', 'Marginal Loss Component']
+
+    files = os.listdir(curr_working_dir)
+    number_files = len(files) - 1
+
+    for node_name in node_names_list:
+        for index, filename in enumerate(files):
+            log.info((f'On file {index+1} out of {number_files}'))
+
+            df = load_pd(filename)
+
+            if not infer_headers_flag:
+                headers = list(df)
+                infer_headers_flag = True
+
+            try:
+                df_name = df.loc[df[desired_key] == node_name]
+                frames.append(df_name)
+
+            except ValueError:
+                raise ValueError(f"{node_name} doesn't exist!")
+
+            except KeyError:
+                raise KeyError(f"Can't find {desired_key} in {headers}")
+
+        concatenated_df = pd.concat(frames)
+        log.debug(concatenated_df)
+
+        if write_to_excel:
+
+            if f'{node_name}_2016.xlsx' in os.listdir('../individual_nodes'):
+                log.debug(f'{node_name} excel already exists, so skipping write to excel')
+                continue
+
+            os.chdir('..')
+            final_file_name = f'/{node_name}_2016.xlsx'
+
+            file_path = os.getcwd() + '/individual_nodes' + final_file_name
+
+            writer = pd.ExcelWriter(file_path)
+            concatenated_df.to_excel(writer)
+            writer.save()
+
+            log.debug(f'Wrote {final_file_name} to excel in {file_path}')
+
+        else:
+            log.debug(concatenated_df)
+            node_pd_dict[node_name] = concatenated_df
+
+    log.debug('Done!, returning pd_dict')
+    return node_pd_dict
+
+
+def construct_desired_tables(inter_node_agent_pairings: np.array):
+    # <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
+
+    pass
 
 
 # -> MARK: Interpretation of the agents
@@ -219,8 +339,14 @@ def fractional_capacity():
 
 
 if __name__ == '__main__':
+
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger()
+
     # MARK: Setting up the workspace
     current_working_dir = os.getcwd()
     os.chdir(current_working_dir + "/Data")
 
     helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), to_plot=False)
+
+    # construct_year_chart(['UN.FRNKLNSQ11.510CC'], write_to_excel=True)
