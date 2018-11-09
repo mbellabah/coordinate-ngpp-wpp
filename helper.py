@@ -6,7 +6,7 @@ import logging
 import functools
 import collections
 import pickle
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist, cosine
 from geopy.distance import vincenty
 from mpl_toolkits.basemap import Basemap
 from typing import List, Dict
@@ -235,7 +235,7 @@ def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
     return inter_node_agent_pairings
 
 
-# @suspendlogging
+@suspendlogging
 def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
 
     assert des_wpps.size, 'Provide indices of desired WPPs'
@@ -253,7 +253,7 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
     #     des_wpps = np.arange(len(wpp_f) - 1)
 
     inter_node_pairings = find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
-    construct_desired_tables(inter_node_pairings)
+    construct_desired_tables(inter_node_pairings, plot=True)
 
     if to_plot:
         plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
@@ -262,7 +262,7 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
         plt.show()
 
 
-# @suspendlogging
+@suspendlogging
 def construct_year_chart(node_names_list: List[str], write_to_excel: bool = False) -> Dict[str, pd.DataFrame]:
     ''' Returns an excel file with the excel file '''
 
@@ -340,11 +340,23 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
     return node_pd_dict
 
 
+@trackcalls
 @suspendlogging
-def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False):
+def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False, plot=False):
     # <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
 
-    assert use_pickle != save_pickle, 'Ensure that use_pickle boolean is opposite of save_pickle'
+    assert use_pickle != save_pickle, 'Ensure that argument use_pickle boolean is opposite of argument save_pickle'
+
+    mapping_dictionary = {}
+    for wpp, pnode_name_wpp, ngpp, pnode_name_ngpp in zip(
+            inter_node_agent_pairings[:,0],
+            inter_node_agent_pairings[:,3],
+            inter_node_agent_pairings[:,4],
+            inter_node_agent_pairings[:,7]
+            ):
+
+        mapping_dictionary[(pnode_name_wpp, pnode_name_ngpp)] = (wpp, ngpp)
+
 
     reshaped_wpp_node = inter_node_agent_pairings[:, 3].reshape(inter_node_agent_pairings[:, 3].size, 1)
     reshaped_ngpp_node = inter_node_agent_pairings[:, 7].reshape(inter_node_agent_pairings[:, 7].size, 1)
@@ -369,21 +381,48 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
     for pair in desired_nodes.tolist():
         node_1, node_2 = tuple(pair)
 
+
         node_1_df = node_pd_dict[node_1]
         node_2_df = node_pd_dict[node_2]
 
         node_1_np = np.array([node_1_df[criteria]]).T
         node_2_np = np.array([node_2_df[criteria]]).T
 
-        if node_1_np.size == node_2_np.size:
-            difference = node_1_np - node_2_np
+        if node_1_np.size == node_2_np.size and node_1_np.size > 0:
 
-            plt.figure(f'{pair}')
-            plt.plot(difference)
+            difference, mean, standard_dev, similarity, minimum, maximum = get_relevant_data(node_1_np, node_2_np)
+
+            statistical_info = (
+                f"({node_1}, {node_2}) ==> {mapping_dictionary[tuple(pair)]}\nMean: {mean}\nStandard Deviation: {standard_dev}\n"
+                f"Similarity: {similarity}\nMin: {minimum}\nMax: {maximum}"
+                )
+
+            # Print the statistical information regarding the nodes
+            print('\n' + statistical_info)
+
+            if plot:
+                plt.figure(f'{pair}')
+                plt.plot(difference)
+                plt.figtext(0, 0.1, statistical_info, fontsize=8)
+
 
         else: pass
 
         # note, we have node_1_df and node_2_df --> turn into numpy array and run std,
+
+
+def get_relevant_data(node_1_np: np.array, node_2_np: np.array) -> tuple:
+    ''' Returns the mean, stdev, min and max of the difference between two arrays'''
+
+    difference_array = node_1_np - node_2_np
+    similarity = 1 - cosine(node_1_np, node_2_np)
+
+    mean = np.mean(difference_array)
+    standard_dev = np.std(difference_array)
+    minimum = np.min(np.abs(difference_array))
+    maximum = np.max(np.abs(difference_array))
+
+    return difference_array, mean, standard_dev, similarity, minimum, maximum
 
 
 # -> MARK: Interpretation of the agents
