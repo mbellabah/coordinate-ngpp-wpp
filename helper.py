@@ -4,11 +4,13 @@ import numpy as np
 import os
 import logging
 import functools
+import collections
+import pickle
 from scipy.spatial.distance import cdist
 from geopy.distance import vincenty
 from mpl_toolkits.basemap import Basemap
 from typing import List, Dict
-import collections
+
 
 # Exception Handling
 from xlrd import XLRDError
@@ -46,10 +48,14 @@ def suspendlogging(func):
 
 
 # MARK: Helper Functions
+
+@suspendlogging
 def load_pd(file_name):
 
     excel_file_type = ('.xls', '.xlsx', '.XLS', '.XLSX')
     csv_file_type = ('.csv', '.CSV')
+
+    log.debug(('load_pd', os.getcwd()))
 
     if file_name.endswith(excel_file_type):
         try:
@@ -154,7 +160,7 @@ def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', ll
 
 # MARK: Functions to do with agents
 
-# @suspendlogging
+@suspendlogging
 def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
     assert pnodesf is not None, ValueError('Provide the pricing node file')
 
@@ -209,7 +215,6 @@ def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
     log.debug(f'NGPP_Pairs {ngpp_pricing_node_pairs}')
 
 
-
     ##################################################################################
     pnodes_wpp_names_coords = wpp_pricing_node_pairs[:, 1:3]
     pnodes_ngpp_names_coords = ngpp_pricing_node_pairs[:, 1:3]
@@ -247,7 +252,8 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
     #     des_ngpps = np.arange(len(ngpp_f) - 1)
     #     des_wpps = np.arange(len(wpp_f) - 1)
 
-    find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
+    inter_node_pairings = find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
+    construct_desired_tables(inter_node_pairings)
 
     if to_plot:
         plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
@@ -256,11 +262,15 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
         plt.show()
 
 
-@suspendlogging
+# @suspendlogging
 def construct_year_chart(node_names_list: List[str], write_to_excel: bool = False) -> Dict[str, pd.DataFrame]:
     ''' Returns an excel file with the excel file '''
 
-    os.chdir(os.getcwd() + '/2016_realtime_hourly_dataset')
+    if os.getcwd().endswith('2016_realtime_hourly_dataset'):
+        pass
+    else:
+        os.chdir(os.getcwd() + '/2016_realtime_hourly_dataset')
+
     curr_working_dir = os.getcwd()
 
     output_df = None
@@ -268,9 +278,8 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
     headers = []
     df_name = None
     desired_key = 'Location Name'
-    frames = []
 
-    node_pd_dict = collections.defaultdict(list)
+    node_pd_dict = {}
 
     # assume infer_headers = ['H', 'Date', 'Hour Ending', 'Location ID', 'Location Name', 'Location Type', 'Locational Marginal Price', 'Energy Component', 'Congestion Component', 'Marginal Loss Component']
 
@@ -278,8 +287,17 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
     number_files = len(files) - 1
 
     for node_name in node_names_list:
+        frames = []
+
+        if f'{node_name}_2016.xlsx' in os.listdir('../individual_nodes'):
+            log.debug(f'{node_name} excel already exists, so skipping write to excel')
+            node_pd_dict[node_name] = load_pd('../individual_nodes/' + f'{node_name}_2016.xlsx')
+
+            continue
+
         for index, filename in enumerate(files):
-            log.info((f'On file {index+1} out of {number_files}'))
+            if (index + 1) % 20 == 0:
+                log.info((f'On file {index+1} out of {number_files}'))
 
             df = load_pd(filename)
 
@@ -306,10 +324,9 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
                 log.debug(f'{node_name} excel already exists, so skipping write to excel')
                 continue
 
-            os.chdir('..')
             final_file_name = f'/{node_name}_2016.xlsx'
 
-            file_path = os.getcwd() + '/individual_nodes' + final_file_name
+            file_path = '../individual_nodes' + final_file_name
 
             writer = pd.ExcelWriter(file_path)
             concatenated_df.to_excel(writer)
@@ -317,18 +334,56 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
 
             log.debug(f'Wrote {final_file_name} to excel in {file_path}')
 
-        else:
-            log.debug(concatenated_df)
-            node_pd_dict[node_name] = concatenated_df
+        node_pd_dict[node_name] = concatenated_df
 
     log.debug('Done!, returning pd_dict')
     return node_pd_dict
 
 
-def construct_desired_tables(inter_node_agent_pairings: np.array):
+@suspendlogging
+def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False):
     # <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
 
-    pass
+    assert use_pickle != save_pickle, 'Ensure that use_pickle boolean is opposite of save_pickle'
+
+    reshaped_wpp_node = inter_node_agent_pairings[:, 3].reshape(inter_node_agent_pairings[:, 3].size, 1)
+    reshaped_ngpp_node = inter_node_agent_pairings[:, 7].reshape(inter_node_agent_pairings[:, 7].size, 1)
+
+    criteria = 'Locational Marginal Price'
+
+    desired_nodes = np.concatenate(
+        (reshaped_wpp_node, reshaped_ngpp_node),
+        axis=1
+    )
+    node_names = desired_nodes.flatten().tolist()
+
+    if use_pickle:
+        node_pd_dict = pickle.load(open('node_pd_dict_pickle.p', 'rb'))
+
+    if save_pickle:
+        node_pd_dict = construct_year_chart(node_names, write_to_excel=True)
+        pickle.dump(node_pd_dict, open('node_pd_dict_pickle.p', 'wb'))
+
+    log.debug(node_pd_dict)
+
+    for pair in desired_nodes.tolist():
+        node_1, node_2 = tuple(pair)
+
+        node_1_df = node_pd_dict[node_1]
+        node_2_df = node_pd_dict[node_2]
+
+        node_1_np = np.array([node_1_df[criteria]]).T
+        node_2_np = np.array([node_2_df[criteria]]).T
+
+        if node_1_np.size == node_2_np.size:
+            difference = node_1_np - node_2_np
+
+            plt.figure(f'{pair}')
+            plt.plot(difference)
+
+        else: pass
+
+        # note, we have node_1_df and node_2_df --> turn into numpy array and run std,
 
 
 # -> MARK: Interpretation of the agents
@@ -348,5 +403,7 @@ if __name__ == '__main__':
     os.chdir(current_working_dir + "/Data")
 
     helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), to_plot=False)
+
+    plt.show()
 
     # construct_year_chart(['UN.FRNKLNSQ11.510CC'], write_to_excel=True)
