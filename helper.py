@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import os
+import os, sys
 import logging
 import functools
 import collections
@@ -9,7 +9,7 @@ import pickle
 from scipy.spatial.distance import cdist, cosine
 from geopy.distance import vincenty
 from mpl_toolkits.basemap import Basemap
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 # Exception Handling
@@ -75,6 +75,16 @@ def load_pd(file_name):
         return None
 
 
+def write_to_excel(filename, df):
+    try:
+        filepath = os.getcwd() + '/' + filename
+        writer = pd.ExcelWriter(filepath)
+        df.to_excel(writer)
+        writer.save()
+    except:
+        raise Exception('Not sure what is wrong . . .')
+
+
 def closest_point(point, others):
     # return the arguments of the closest coord in others relative to point
     try:
@@ -83,7 +93,7 @@ def closest_point(point, others):
         return None
 
 
-def build_agents() -> None:
+def build_agents(save_to_excel=False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     wpp_f = load_pd('wind_power_producers.xls')
     ngpp_f = load_pd('natural_gas_power_producers.xls')
     p_nodes_f = load_pd('ISO_NE_pnode_coords.xlsx')
@@ -104,6 +114,12 @@ def build_agents() -> None:
     ngpp_f = filter_tech_ngpp(ngpp_f)
     ngpp_f = bundle(ngpp_f)
     wpp_f = bundle(wpp_f)
+
+    # Print to excel file
+    if save_to_excel:
+        write_to_excel('filtered_ngpp.xlsx', ngpp_f)
+        write_to_excel('filtered_wpp.xlsx', wpp_f)
+        write_to_excel('filtered_pnodes.xlsx', p_nodes_f)
 
     return wpp_f, ngpp_f, p_nodes_f
 
@@ -161,7 +177,7 @@ def plot_agents(wpp_f, ngpp_f, p_nodes_f, des_ngpps=[], des_wpps=[], res='i', ll
 # MARK: Functions to do with agents
 
 @suspendlogging
-def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
+def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None, to_excel=False):
     assert pnodesf is not None, ValueError('Provide the pricing node file')
 
     # First find the closest pricing node for each agent -- # <Longitude>, <Latitude>, <Plant Key>
@@ -231,6 +247,20 @@ def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None):
 
     inter_node_agent_pairings = np.concatenate((wpp_pricing_node_pairs, ngpp_pricing_node_pairs[pairs_within_selves_args]), axis=1)
     log.debug(f'inter_node_agent_pairings {inter_node_agent_pairings}')
+
+    # < powerplant > < node_long > < node_lat > < node_name >
+    inter_node_agent_pairings_df =  pd.DataFrame({'WPP': inter_node_agent_pairings[:,0],
+                                                  'WPP PNode Longitude':inter_node_agent_pairings[:,1],
+                                                  'WPP PNode Latitude': inter_node_agent_pairings[:,2],
+                                                  'WPP PNode Name': inter_node_agent_pairings[:,3],
+                                                  'NGPP': inter_node_agent_pairings[:,4],
+                                                  'NGPP PNode Longitude': inter_node_agent_pairings[:,5],
+                                                  'NGPP PNode Latitude': inter_node_agent_pairings[:,6],
+                                                  'NGPP PNode Name': inter_node_agent_pairings[:,7]
+                                                  })
+
+    if to_excel:
+        write_to_excel('Interagent Node Pairings.xlsx', inter_node_agent_pairings_df)
 
     return inter_node_agent_pairings
 
@@ -339,10 +369,14 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
 
 @trackcalls
 @suspendlogging
-def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False, plot=False):
+def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False, plot=False, save_images=False, log_output=False):
     # <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
 
     assert use_pickle != save_pickle, 'Ensure that argument use_pickle boolean is opposite of argument save_pickle'
+
+    log_file = None
+    if log_output:
+        log_file = open('statistical_info.log', 'w')
 
     mapping_dictionary = {}
     for wpp, pnode_name_wpp, ngpp, pnode_name_ngpp in zip(
@@ -352,16 +386,17 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
             inter_node_agent_pairings[:,7]
             ):
 
-        mapping_dictionary[(pnode_name_wpp, pnode_name_ngpp)] = (wpp, ngpp)
+        mapping_dictionary[(pnode_name_wpp, pnode_name_ngpp)] = (pnode_name_wpp, pnode_name_ngpp)
 
-
+    reshaped_wpp = inter_node_agent_pairings[:, 0].reshape(inter_node_agent_pairings[:,0].size, 1)
     reshaped_wpp_node = inter_node_agent_pairings[:, 3].reshape(inter_node_agent_pairings[:, 3].size, 1)
+    reshaped_ngpp = inter_node_agent_pairings[:, 4].reshape(inter_node_agent_pairings[:,4].size, 1)
     reshaped_ngpp_node = inter_node_agent_pairings[:, 7].reshape(inter_node_agent_pairings[:, 7].size, 1)
 
     criteria = 'Locational Marginal Price'
 
     desired_nodes = np.concatenate(
-        (reshaped_wpp_node, reshaped_ngpp_node),
+        (reshaped_wpp, reshaped_wpp_node, reshaped_ngpp, reshaped_ngpp_node),
         axis=1
     )
     node_names = desired_nodes.flatten().tolist()
@@ -376,8 +411,7 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
     log.debug(node_pd_dict)
 
     for pair in desired_nodes.tolist():
-        node_1, node_2 = tuple(pair)
-
+        wpp, node_1, ngpp, node_2 = tuple(pair)
 
         node_1_df = node_pd_dict[node_1]
         node_2_df = node_pd_dict[node_2]
@@ -386,22 +420,27 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
         node_2_np = np.array([node_2_df[criteria]]).T
 
         if node_1_np.size == node_2_np.size and node_1_np.size > 0:
-
             difference, mean, standard_dev, similarity, minimum, maximum = get_relevant_data(node_1_np, node_2_np)
 
             statistical_info = (
-                f"({node_1}, {node_2}) ==> {mapping_dictionary[tuple(pair)]}\nMean: {mean}\nStandard Deviation: {standard_dev}\n"
+                f"({node_1}, {node_2}) ==> ({wpp}, {ngpp})\nMean: {mean}\nStandard Deviation: {standard_dev}\n"
                 f"Similarity: {similarity}\nMin: {minimum}\nMax: {maximum}"
                 )
 
             # Print the statistical information regarding the nodes
-            print('\n' + statistical_info)
+            if log_output:
+                assert log_file is not None, FileNotFoundError
+                sys.stdout = log_file
+                print('\n' + statistical_info)
+                sys.stdout = sys.__stdout__
 
             if plot:
                 plt.figure(f'{pair}')
                 plt.plot(difference)
                 plt.figtext(0, 0.1, statistical_info, fontsize=8)
 
+                if save_images:
+                    plt.savefig(f'({node_1}, {node_2})_({wpp}, {ngpp}).png')
 
         else: pass
 
@@ -416,8 +455,8 @@ def get_relevant_data(node_1_np: np.array, node_2_np: np.array) -> tuple:
 
     mean = np.mean(difference_array)
     standard_dev = np.std(difference_array)
-    minimum = np.min(np.abs(difference_array))
-    maximum = np.max(np.abs(difference_array))
+    minimum = np.min(difference_array)
+    maximum = np.max(difference_array)
 
     return difference_array, mean, standard_dev, similarity, minimum, maximum
 
