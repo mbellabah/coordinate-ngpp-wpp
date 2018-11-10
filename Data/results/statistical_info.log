@@ -1,0 +1,203 @@
+
+(LD.STICKNEY34.5, UN.GRAHAM  46  MLFH) ==> (Beaver Ridge Wind, Maine Independence Station (Casco Bay))
+Mean: 2.2897119763205827
+Standard Deviation: 10.397929394740462
+Similarity: 0.9700062556203096
+Min: -5.0800000000000125
+Max: 287.29999999999995
+
+(LD.WOODLAND23, LD.GE_CO_14115 1X LD) ==> (Berkshire Wind Power, Pittsfield Generating Station)
+Mean: 0.14754098360655737
+Standard Deviation: 0.25172367655900135
+Similarity: 0.9999956950582236
+Min: -0.6099999999999852
+Max: 9.529999999999973
+
+(UN.BULL_HL 34.5BLHW, UN.GRAHAM  46  MLFH) ==> (Bull Hill Wind Project (Blue Sky East), Maine Independence Station (Casco Bay))
+Mean: 0.27222905282331505
+Standard Deviation: 0.6270826280468881
+Similarity: 0.9999344260961656
+Min: -1.6000000000000227
+Max: 23.86999999999989
+
+(LD.MYSTIC  24.0, LD.MYSTIC  13.8) ==> (Charlestown Wind Farm, Mystic River 8 and 9)
+Mean: -0.00018101092896174507
+Standard Deviation: 0.013749532996800703
+Similarity: 0.999999955396983
+Min: -1.2399999999999807
+Max: 0.020000000000000462
+
+(UN.FRNKLNDR13.2FRDR, LD.OXFORD  13.8) ==> (Colebrook South Wind Farm (Flagg Hill Road), Towantic Energy Center)
+Mean: 0.15562841530054644
+Standard Deviation: 0.5866681735833865
+Similarity: 0.9999366217353637
+Min: -38.02999999999999
+Max: 15.599999999999909
+
+(LD.DEER_ISL115, UN.EDGAR   18.0ED1A) ==> (Deer Island Treatment Wind, Fore River)
+Mean: 1.4680669398907105
+Standard Deviation: 8.573823542268208
+Similarity: 0.98310071733383
+Min: -76.36000000000001
+Max: 273.83
+
+(LD.ARSENE  13.2, UN.DARTMTH 13.8DART) ==> (Fairhaven Wind Energy Project, Dartmouth Power Associates)
+Mean: -0.015870901639344303
+Standard Deviation: 0.29888814485229886
+Similarity: 0.9999787246062486
+Min: -18.929999999999993
+Max: 7.789999999999964
+
+(UN.FALMOUTH25  WTIS, UN.DARTMTH 13.8DART) ==> (Falmouth Wastewater Treatment Plant, Dartmouth Power Associates)
+Mean: -0.0906113387978142
+Standard Deviation: 0.5472284466326988
+Similarity: 0.9999254445791692
+Min: -40.459999999999994
+Max: 7.720000000000027
+
+(UN.BUCKSPRT18.0BKSP, UN.GRAHAM  46  MLFH) ==> (Fox Islands Wind - Vinalhaven, Maine Independence Station (Casco Bay))
+Mean: 0.25859517304189433
+Standard Deviation: 0.3896259860107887
+Similarity: 0.9999821362699723
+Min: -1.25
+Max: 15.230000000000018
+
+(LD.STALBANS34.5, LD.GE_CO_14115 1X LD) ==> (Georgia Mountain Community Wind Project, Pittsfield Generating Station)
+Mean: -0.8027197176684882
+Standard Deviation: 1.2027139319613716
+Similarity: 0.9996190050782531
+Min: -16.29000000000002
+Max: 34.47
+
+(UN.PARIS   34.5GRPW, UN.GR_RIDGE16  GRAN) ==> (Granite Reliable Power Windpark, Granite Ridge)
+Mean: -3.15029485428051
+Standard Deviation: 12.671070997551539
+Similarity: 0.954056993072037
+Min: -219.01
+Max: 23.599999999999994
+
+(UN.ASHLAND 34.5BRID, UN.GR_RIDGE16  GRAN) ==> (Groton Wind Project, Granite Ridge)
+Mean: 0.2711372950819672
+Standard Deviation: 1.0307139890550874
+Similarity: 0.9997814448450691
+Min: -33.47
+Max: 29.680000000000064
+
+(UN.HOOSAC  69  HOSW, LD.GE_CO_14115 1X LD) ==> (Hoosac Wind, Pittsfield Generating Station)
+Mean: -0.122797131147541
+Standard Deviation: 1.022449188110899
+Similarity: 0.9997226274717924
+Min: -9.61999999999999
+Max: 42.650000000000006
+
+(LD.HOBRT_ST13.81X LD, UN.EDGAR   18.0ED1A) ==> (Hull Wind, Fore River)
+Mean: 0.07539162112932601
+Standard Deviation: 0.7125240587143246
+Similarity: 0.9998719265663992
+Min: -0.36000000000001364
+Max: 60.489999999999995
+
+(UN.SMITH_HY6.9 SMTH, UN.GR_RIDGE16  GRAN) ==> (Jericho Mountain Wind Project, Granite Ridge)
+Mean: -3.1538888888888885
+Standard Deviation: 12.446894036145522
+Similarity: 0.9555673116486277
+Min: -218.24
+Max: 27.909999999999997
+
+(UN.NORTH_RD34.5HEMP, UN.MILLENUM16  MILN) ==> (Lempster Mountain, Millennium Power)
+Mean: 1.4982137978142076
+Standard Deviation: 6.602054067080547
+Similarity: 0.9889154553864282
+Min: -72.79999999999995
+Max: 288.59000000000003
+
+(UN.SYKES_RD13.8FLRV, UN.DIGHTON 115 DIGH) ==> (Lightolier Wind, Dighton)
+Mean: 0.28422814207650277
+Standard Deviation: 0.6049824026482382
+Similarity: 0.999967533492239
+Min: -2.2299999999999898
+Max: 27.49000000000001
+
+(LD.BERLN_NH22, UN.GR_RIDGE16  GRAN) ==> (Loranger Power Generation Wind Farm, Granite Ridge)
+Mean: -3.1500796903460837
+Standard Deviation: 12.446558485793561
+Similarity: 0.9555776357138767
+Min: -218.24
+Max: 27.89
+
+(UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Mars Hill Wind Farm Project, Maine Independence Station (Casco Bay))
+Mean: -1.2255908469945358
+Standard Deviation: 8.559418848088931
+Similarity: 0.9775200233020801
+Min: -121.2
+Max: 2.920000000000016
+
+(UN.FRNKLNSQ11.510CC, UN.FRNKLNSQ11.510CC) ==> (NBC Field's Point Wind Farm, Manchester Street)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(LD.QUINNIPC13.8, UN.MILFD_CT21  MFD1) ==> (New Haven Wind Farm, Milford Power)
+Mean: 0.3300182149362477
+Standard Deviation: 0.3549146869392594
+Similarity: 0.9999784467057251
+Min: -1.5300000000000011
+Max: 8.810000000000002
+
+(LD.ASHBRNHM115, UN.MILLENUM16  MILN) ==> (North Central Correctional Institution, Millennium Power)
+Mean: 1.2357912112932603
+Standard Deviation: 6.376167017910295
+Similarity: 0.9895567026011335
+Min: -20.319999999999993
+Max: 284.39
+
+(UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Oakfield Wind Project (Evergreen II), Maine Independence Station (Casco Bay))
+Mean: -1.2255908469945358
+Standard Deviation: 8.559418848088931
+Similarity: 0.9775200233020801
+Min: -121.2
+Max: 2.920000000000016
+
+(UN.ROLLINS 34.5ROLL, UN.GRAHAM  46  MLFH) ==> (Passadumkeag Windpark (Passadumkeag Mountain Wind Project), Maine Independence Station (Casco Bay))
+Mean: -0.9438763661202184
+Standard Deviation: 4.593265868380477
+Similarity: 0.9933510432305181
+Min: -187.0
+Max: 3.1799999999999784
+
+(UN.FLAGG_PD13.8PINE, UN.MILLENUM16  MILN) ==> (Richard F Wheeler (Princeton Wind), Millennium Power)
+Mean: 1.199261156648452
+Standard Deviation: 6.2912941418404555
+Similarity: 0.9898635688630643
+Min: -17.289999999999992
+Max: 285.15
+
+(UN.ROLLINS 34.5ROLL, UN.GRAHAM  46  MLFH) ==> (Rollins Wind Farm (Evergreen Wind Power III), Maine Independence Station (Casco Bay))
+Mean: -0.9438763661202184
+Standard Deviation: 4.593265868380477
+Similarity: 0.9933510432305181
+Min: -187.0
+Max: 3.1799999999999784
+
+(UN.SHEFIELD34.5SHEF, UN.MILLENUM16  MILN) ==> (Sheffield Wind Project, Millennium Power)
+Mean: -4.185960837887068
+Standard Deviation: 22.000315680408505
+Similarity: 0.8725151110766726
+Min: -276.1
+Max: 275.39
+
+(UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Stetson Mountain Wind II, Maine Independence Station (Casco Bay))
+Mean: -1.2255908469945358
+Standard Deviation: 8.559418848088931
+Similarity: 0.9775200233020801
+Min: -121.2
+Max: 2.920000000000016
+
+(UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Stetson Wind, Maine Independence Station (Casco Bay))
+Mean: -1.2255908469945358
+Standard Deviation: 8.559418848088931
+Similarity: 0.9775200233020801
+Min: -121.2
+Max: 2.920000000000016
