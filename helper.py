@@ -7,7 +7,7 @@ import functools
 import collections
 import pickle
 from scipy.spatial.distance import cdist, cosine
-from geopy.distance import vincenty
+from geopy.distance import vincenty, distance
 from mpl_toolkits.basemap import Basemap
 from typing import List, Dict, Tuple
 
@@ -38,11 +38,15 @@ def suspendlogging(func):
             logging.disable(logging.NOTSET)
     return wrapper
 
+EXPECTED_NUMBER_OF_ENTRIES_FULL_YEAR = 8784  # Ensure full year hourly data set 24 * 366 = 8784
+
 ###############################################################################
 
 # TODO: [x] Bundle the WPPs
 # TODO: [] -> check above via coords
-# TODO: [] Calculate the relevant data regarding the pricing nodes
+# TODO: [] Match those only with full datasets
+# TODO: [] Add documentation for each function
+# TODO: [] Delete any non-full year file
 
 ################################################################################
 
@@ -82,7 +86,7 @@ def write_to_excel(filename, df):
         df.to_excel(writer)
         writer.save()
     except:
-        raise Exception('Not sure what is wrong . . .')
+        raise Exception('Not sure what went wrong . . .')
 
 
 def closest_point(point, others):
@@ -266,24 +270,61 @@ def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None, to_e
 
 
 @suspendlogging
-def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False):
+def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False, save_pickle=True, use_pickle=False):
 
     assert des_wpps.size, 'Provide indices of desired WPPs'
     assert des_ngpps.size, 'Provide indices of desired NGPPs'
+    assert use_pickle != save_pickle, 'Ensure that argument use_pickle boolean is opposite of argument save_pickle'
 
     wpp_f, ngpp_f, p_nodes_f = build_agents()
 
-    log.debug(f'WPP dataframe: {wpp_f}')
-    log.debug(f'NGPP dataframe: {ngpp_f}')
-    log.debug(f'P_Nodes dataframe: {p_nodes_f}')
+    print('Currently in', os.getcwd())
+
+    # log.debug(f'WPP dataframe: {wpp_f}')
+    # log.debug(f'NGPP dataframe: {ngpp_f}')
+    # log.debug(f'P_Nodes dataframe: {p_nodes_f}')
 
     # Currently doesn't work, so do not use
     # if not (des_ngpps or des_ngpps):
     #     des_ngpps = np.arange(len(ngpp_f) - 1)
     #     des_wpps = np.arange(len(wpp_f) - 1)
 
-    inter_node_pairings = find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
-    construct_desired_tables(inter_node_pairings, plot=True)
+    if save_pickle:
+        empty_nodes_history: list = []
+
+        for round_num in range(1,10):
+            print(f'ROUND: {round_num} \n')
+
+            inter_node_pairings = find_closest_pricing_node_to_agent(p_nodes_f, wppf=wpp_f, ngppf=ngpp_f)
+            p_nodes_f, empty_nodes = construct_desired_tables(inter_node_pairings, p_nodes_f, wpp_f, ngpp_f, use_pickle=False, save_pickle=True)
+            empty_nodes_history.append(empty_nodes)
+
+            if round_num == 1:
+                initial_inter_node_pairings = inter_node_pairings
+
+            if len(empty_nodes) == 0:
+                break
+
+        to_package = {
+                        'Initial inter_node_pairings': initial_inter_node_pairings,
+                        'Final inter_node_pairings': inter_node_pairings,
+                        'Empty_nodes_history': empty_nodes_history,
+                        'p_nodes_f': p_nodes_f
+                      }
+
+        pickle.dump(to_package, open('helper_main_package.p', 'wb'))
+
+    if use_pickle:
+        helper_main_package = pickle.load(open('helper_main_package.p', 'rb'))
+
+        helper_init_inter_node_pairings = helper_main_package['Initial inter_node_pairings']
+        helper_final_inter_node_pairings = helper_main_package['Final inter_node_pairings']
+
+        # Compute the distance between previous pricing nodes and new pricing nodes
+        distance_evolution = find_distances_between_pairings(helper_init_inter_node_pairings, helper_final_inter_node_pairings)
+        write_to_excel('distance_evolution.xlsx', distance_evolution)
+
+    print('Done...')
 
     if to_plot:
         plot_agents(wpp_f=wpp_f, ngpp_f=ngpp_f, p_nodes_f=p_nodes_f, des_ngpps=des_ngpps, des_wpps=des_wpps)
@@ -325,6 +366,8 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
         for index, filename in enumerate(files):
             if (index + 1) % 20 == 0:
                 log.info((f'On file {index+1} out of {number_files}'))
+
+            if filename == 'node_pd_dict_pickle.p': continue    # Avoid passing over the pickle file
 
             df = load_pd(filename)
 
@@ -369,24 +412,29 @@ def construct_year_chart(node_names_list: List[str], write_to_excel: bool = Fals
 
 @trackcalls
 @suspendlogging
-def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bool = True, save_pickle: bool = False, plot=False, save_images=False, log_output=False):
-    # <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
+def construct_desired_tables(inter_node_agent_pairings: np.array, pnodesf: pd.DataFrame, wppf: pd.DataFrame, ngppf: pd.DataFrame,
+                             use_pickle: bool = True, save_pickle: bool = False,
+                             plot=False, save_images=False, log_output=False) -> Tuple[pd.DataFrame, np.array]:
+    '''
+
+    :param inter_node_agent_pairings: <wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>
+
+    :param pnodesf:
+    :param wppf:
+    :param ngppf:
+    :param use_pickle:
+    :param save_pickle:
+    :param plot:
+    :param save_images:
+    :param log_output:
+    :return: <Tuple> (new pnodes_f with empty datasets removed with empty set, empty_dataset_nodes)
+    '''
 
     assert use_pickle != save_pickle, 'Ensure that argument use_pickle boolean is opposite of argument save_pickle'
 
     log_file = None
     if log_output:
         log_file = open('statistical_info.log', 'w')
-
-    mapping_dictionary = {}
-    for wpp, pnode_name_wpp, ngpp, pnode_name_ngpp in zip(
-            inter_node_agent_pairings[:,0],
-            inter_node_agent_pairings[:,3],
-            inter_node_agent_pairings[:,4],
-            inter_node_agent_pairings[:,7]
-            ):
-
-        mapping_dictionary[(pnode_name_wpp, pnode_name_ngpp)] = (pnode_name_wpp, pnode_name_ngpp)
 
     reshaped_wpp = inter_node_agent_pairings[:, 0].reshape(inter_node_agent_pairings[:,0].size, 1)
     reshaped_wpp_node = inter_node_agent_pairings[:, 3].reshape(inter_node_agent_pairings[:, 3].size, 1)
@@ -399,31 +447,38 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
         (reshaped_wpp, reshaped_wpp_node, reshaped_ngpp, reshaped_ngpp_node),
         axis=1
     )
-    node_names = desired_nodes.flatten().tolist()
+
+    node_names = np.concatenate(
+        (reshaped_wpp_node, reshaped_ngpp_node),
+        axis=1
+    ).flatten().tolist()
 
     if use_pickle:
-        node_pd_dict = pickle.load(open('node_pd_dict_pickle.p', 'rb'))
+        node_pd_dict: Dict[str, pd.DataFrame] = pickle.load(open('node_pd_dict_pickle.p', 'rb'))
 
     if save_pickle:
-        node_pd_dict = construct_year_chart(node_names, write_to_excel=True)
+        node_pd_dict: Dict[str, pd.DataFrame] = construct_year_chart(node_names, write_to_excel=True)
         pickle.dump(node_pd_dict, open('node_pd_dict_pickle.p', 'wb'))
 
-    log.debug(node_pd_dict)
+    # All the pricing nodes with non full datasets
+    empty_data_set_nodes: list = []
 
     for pair in desired_nodes.tolist():
-        wpp, node_1, ngpp, node_2 = tuple(pair)
+        wpp, node_wpp, ngpp, node_ngpp = tuple(pair)
 
-        node_1_df = node_pd_dict[node_1]
-        node_2_df = node_pd_dict[node_2]
+        node_wpp_df = node_pd_dict[node_wpp]
+        node_ngpp_df = node_pd_dict[node_ngpp]
 
-        node_1_np = np.array([node_1_df[criteria]]).T
-        node_2_np = np.array([node_2_df[criteria]]).T
+        node_wpp_np = np.array([node_wpp_df[criteria]]).T
+        node_ngpp_np = np.array([node_ngpp_df[criteria]]).T
 
-        if node_1_np.size == node_2_np.size and node_1_np.size > 0:
-            difference, mean, standard_dev, similarity, minimum, maximum = get_relevant_data(node_1_np, node_2_np)
+        # if node_1_np.size == node_2_np.size and node_1_np.size > 0:
+        if node_wpp_np.size == node_ngpp_np.size == EXPECTED_NUMBER_OF_ENTRIES_FULL_YEAR:
+
+            difference, mean, standard_dev, similarity, minimum, maximum = get_relevant_data(node_wpp_np, node_ngpp_np)
 
             statistical_info = (
-                f"({node_1}, {node_2}) ==> ({wpp}, {ngpp})\nMean: {mean}\nStandard Deviation: {standard_dev}\n"
+                f"({node_wpp}, {node_ngpp}) ==> ({wpp}, {ngpp})\nMean: {mean}\nStandard Deviation: {standard_dev}\n"
                 f"Similarity: {similarity}\nMin: {minimum}\nMax: {maximum}"
                 )
 
@@ -440,11 +495,21 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, use_pickle: bo
                 plt.figtext(0, 0.1, statistical_info, fontsize=8)
 
                 if save_images:
-                    plt.savefig(f'({node_1}, {node_2})_({wpp}, {ngpp}).png')
+                    plt.savefig(f'({node_wpp}, {node_ngpp})_({wpp}, {ngpp}).png')
 
-        else: pass
+        else:  # These nodes are not full datasets, collect and create table to drop
+            if node_wpp_np.size != EXPECTED_NUMBER_OF_ENTRIES_FULL_YEAR:
+                empty_data_set_nodes.append([wpp, node_wpp])
 
-        # note, we have node_1_df and node_2_df --> turn into numpy array and run std,
+            if node_ngpp_np.size != EXPECTED_NUMBER_OF_ENTRIES_FULL_YEAR:
+                empty_data_set_nodes.append([ngpp, node_ngpp])
+
+    empty_data_set_nodes = np.array(empty_data_set_nodes)
+
+    if empty_data_set_nodes.size > 0:
+        pnodesf = pnodesf[~pnodesf['LMP Name'].isin(empty_data_set_nodes[:, 1].tolist())]
+
+    return pnodesf, empty_data_set_nodes
 
 
 def get_relevant_data(node_1_np: np.array, node_2_np: np.array) -> tuple:
@@ -468,6 +533,52 @@ def fractional_capacity():
     return None
 
 
+def find_distances_between_pairings(initial_pairing, final_pairing):
+    '''<wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>'''
+
+    initial_wpp = initial_pairing[:, 0]
+    initial_wpp_node = initial_pairing[:, 3]
+    initial_wpp_coords = initial_pairing[:, 1:3]
+    initial_ngpp = initial_pairing[:, 4]
+    initial_ngpp_node = initial_pairing[:, 7]
+    initial_ngpp_coords = initial_pairing[:, 5:7]
+
+    final_wpp_node = final_pairing[:, 3]
+    final_wpp_coords = final_pairing[:, 1:3]
+    final_ngpp_node = final_pairing[:, 7]
+    final_ngpp_coords = final_pairing[:, 5:7]
+
+    wpp_coordinates = np.concatenate((initial_wpp_coords, final_wpp_coords), axis=1)
+    ngpp_coordinates = np.concatenate((initial_ngpp_coords, final_ngpp_coords), axis=1)
+
+    wpp_coordinates = np.apply_along_axis(lambda u: distance((u[0], u[1]), (u[2], u[3])).km, axis=1, arr=wpp_coordinates)
+    ngpp_coordinates = np.apply_along_axis(lambda u: distance((u[0], u[1]), (u[2], u[3])).km, axis=1, arr=ngpp_coordinates)
+
+    # output = np.concatenate(
+    #     (initial_wpp, initial_ngpp, initial_wpp_node, final_wpp_node, wpp_coordinates, initial_ngpp_node, final_ngpp_node, ngpp_coordinates),
+    #     axis=1
+    # )
+    #
+    # # Returns the same vector, except with the changes -- as pd
+    # return convert_numpy_to_pd(output,
+    #                            ['Initial WPP', 'Initial NGPP', 'Initial WPP LMP', 'Final WPP LMP', 'Distance (km)', 'Initial NGPP LMP', 'Final NGPP LMP', 'Distance (km)']
+    #                            )
+    # columns = ['Initial WPP', 'Initial NGPP', 'Initial WPP LMP', 'Final WPP LMP', 'Distance (km)', 'Initial NGPP LMP', 'Final NGPP LMP', 'Distance (km)']
+
+    output = {
+        'Initial WPP': initial_wpp.tolist(),
+        'Initial NGPP': initial_ngpp.tolist(),
+        'Initial WPP LMP': initial_wpp_node.tolist(),
+        'Final WPP LMP': final_wpp_node.tolist(),
+        'Distance WPP (km)': wpp_coordinates.tolist(),
+        'Initial NGPP LMP': initial_ngpp_node.tolist(),
+        'Final NGPP LMP': final_ngpp_node.tolist(),
+        'Distance NGPP (km)': ngpp_coordinates.tolist()
+    }
+
+    return pd.DataFrame.from_dict(output)
+
+
 if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG)
@@ -477,7 +588,7 @@ if __name__ == '__main__':
     current_working_dir = os.getcwd()
     os.chdir(current_working_dir + "/Data")
 
-    helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), to_plot=False)
+    helper_main(des_wpps=np.arange(10), des_ngpps=np.arange(10), to_plot=False, save_pickle=False, use_pickle=True)
 
     if plot_agents.has_been_called or construct_desired_tables.has_been_called:
         plt.show()

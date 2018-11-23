@@ -6,17 +6,13 @@ https://github.com/WattTime/pyiso Version 2.17
 
 import sys
 import requests
-import numpy as np
 import pandas as pd
 import datetime
 import pytz
+import logging
 from requests.auth import HTTPBasicAuth
 from typing import Type
 from collections import defaultdict
-
-
-# TODO: Find the pricing nodes history between given date
-# TODO: Fix up confusion regarding the LD, the labels used
 
 
 class ISONEClient:
@@ -24,24 +20,16 @@ class ISONEClient:
     base_url = 'https://webservices.iso-ne.com/api/v1.1'
     TZ_NAME = 'America/New_York'
 
+    logger = logging.getLogger('ISONEClient')
+
     def __init__(self, username, password):
         try:
             self.auth = HTTPBasicAuth(username, password)
 
         except KeyError:
-            msg = 'Provide authentication'
-            raise RuntimeError(msg)
+            raise RuntimeError('Provide authentication')
 
         self.options = {}
-
-    def fetch_data(self, endpoint):
-        url = self.base_url + endpoint
-        response = requests.get(url, auth=self.auth)
-
-        if response:
-            return response.json()
-        else:
-            return {}
 
     def parse_lmp_data(self, data: Type['json']):
         try:
@@ -75,10 +63,21 @@ class ISONEClient:
         raw_data = []
 
         for endpoint in self.request_endpoints(node_id):
+            print('endpoint', endpoint)
             data = self.fetch_data(endpoint)
             raw_data.append(self.parse_lmp_data(data))
 
         return self.raw_lmp_data_to_pd(raw_data)    # convert to pd df
+
+    def fetch_data(self, endpoint):
+        url = self.base_url + endpoint
+        response = requests.get(url, auth=self.auth)
+
+        if response:
+            return response.json()
+        else:
+            self.logger.warning('Not returning anything')
+            return {}
 
     def request_endpoints(self, location_id=None):
         ext = ''
@@ -105,31 +104,45 @@ class ISONEClient:
         dates = []
 
         if self.options['start_at'] and self.options['end_at']:
+
             local_start = self.options['start_at'].astimezone(pytz.timezone(self.TZ_NAME))
             local_end = self.options['end_at'].astimezone(pytz.timezone(self.TZ_NAME))
             this_date = local_start.date()
+
             while this_date <= local_end.date():
                 dates.append(this_date)
                 this_date += datetime.timedelta(days=1)
 
+        print(dates)
         return dates
 
 
-
-def isone_main():
+if __name__ == '__main__':
     ISONE = ISONEClient(username=sys.argv[1], password=sys.argv[2])
 
-    node_id = 355
+    node_id = 38173 # U5SADWN.LUDDN_LN34.
 
     today = datetime.datetime.today()
-    start_at = today - datetime.timedelta(days=2)
+    start_at = today - datetime.timedelta(days=60)
     end_at = today - datetime.timedelta(days=1)
 
-    msg = ISONE.get_lmp(node_id=node_id, data='lmp', latest=False, start_at=start_at, end_at=end_at)
+    # TODO: Fix the timing so that I get the full year for 2017
+    # today = datetime.datetime.today()
+    #
+    # end_at = (today - datetime.timedelta(days=(today - datetime.datetime(2017, 12, 31)).days)).replace(hour=23,
+    #                                                                                                    minute=55,
+    #                                                                                                    second=0,
+    #                                                                                                    microsecond=0)
+    # start_at = (end_at - datetime.timedelta(days=364)).replace(hour=0, minute=0, second=0, microsecond=0)
+    #
+
+    msg: pd.DataFrame = ISONE.get_lmp(node_id=node_id, data='lmp', latest=False, start_at=start_at, end_at=end_at)
+
+    write_excel = False
+    if write_excel:
+        writer = pd.ExcelWriter('test.xlsx')
+        msg.to_excel(writer)
+        writer.save()
 
     print(msg)
-
-
-if __name__ == '__main__':
-    isone_main()
 
