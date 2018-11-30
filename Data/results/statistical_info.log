@@ -13,12 +13,61 @@ Similarity: 0.9999956950582236
 Min: -0.6099999999999852
 Max: 9.529999999999973
 
+(UN.WYMAN_HY13.8WYM1, UN.RUMFD_IP18.0RUMF) ==> (Bingham Wind - Blue Sky West, Rumford)
+Mean: -0.627172131147541
+Standard Deviation: 4.793086679061189
+Similarity: 0.9931586046863669
+Min: -164.91
+Max: 94.43
+
+(LD.W_KNGSTN34.5, UN.RISE    18.0RISE) ==> (Block Island Offshore Wind, Rhode Island State Energy Center)
+Mean: 0.5115300546448088
+Standard Deviation: 0.9294504048671173
+Similarity: 0.9999518441089242
+Min: -2.8200000000000216
+Max: 41.190000000000055
+
+(UN.KING_ST 23  IPSD, UN.KENDALL 13.8KND1) ==> (Boston, Kendall Square)
+Mean: -0.13879895264116576
+Standard Deviation: 6.005872576026789
+Similarity: 0.9913539339258339
+Min: -112.09000000000002
+Max: 311.96999999999997
+
 (UN.BULL_HL 34.5BLHW, UN.GRAHAM  46  MLFH) ==> (Bull Hill Wind Project (Blue Sky East), Maine Independence Station (Casco Bay))
 Mean: 0.27222905282331505
 Standard Deviation: 0.6270826280468881
 Similarity: 0.9999344260961656
 Min: -1.6000000000000227
 Max: 23.86999999999989
+
+(LD.PHILP_LN115, UN.RAILYARD23  MARB) ==> (Camelot Wind Plant, Salem Harbor Station NGCC)
+Mean: -3.141657559198543
+Standard Deviation: 12.968641562041164
+Similarity: 0.9583014878425766
+Min: -329.26
+Max: 11.879999999999995
+
+(UN.FALMOUTH25  WTIS, UN.DARTMTH 13.8DART) ==> (Camp Edwards Wind Farm, Dartmouth Power Associates)
+Mean: -0.0906113387978142
+Standard Deviation: 0.5472284466326988
+Similarity: 0.9999254445791692
+Min: -40.459999999999994
+Max: 7.720000000000027
+
+(UN.LUDDN_LN34.5SADW, UN.RUMFD_IP18.0RUMF) ==> (Canton Mountain Wind, Rumford)
+Mean: 0.025735428051001756
+Standard Deviation: 0.997766383503194
+Similarity: 0.9997092802299392
+Min: -3.589999999999918
+Max: 44.69
+
+(UN.N_CANAL 34.5HADL, UN.RAILYARD23  MARB) ==> (Cape Cod Air Force Station - 6 SWS, Salem Harbor Station NGCC)
+Mean: -0.6585097905282332
+Standard Deviation: 5.913882718713357
+Similarity: 0.9916612266974901
+Min: -90.43
+Max: 44.2
 
 (LD.MYSTIC  24.0, LD.MYSTIC  13.8) ==> (Charlestown Wind Farm, Mystic River 8 and 9)
 Mean: -0.00018101092896174507
@@ -41,6 +90,13 @@ Similarity: 0.98310071733383
 Min: -76.36000000000001
 Max: 273.83
 
+(LD.HARRIMAN69, LD.GE_CO_14115 1X LD) ==> (Deerfield Wind (Searsburg Wind Expansion), Pittsfield Generating Station)
+Mean: 0.05201502732240437
+Standard Deviation: 1.015021239358946
+Similarity: 0.9997520521541123
+Min: -8.879999999999995
+Max: 44.25
+
 (LD.ARSENE  13.2, UN.DARTMTH 13.8DART) ==> (Fairhaven Wind Energy Project, Dartmouth Power Associates)
 Mean: -0.015870901639344303
 Standard Deviation: 0.29888814485229886
@@ -55,6 +111,20 @@ Similarity: 0.9999254445791692
 Min: -40.459999999999994
 Max: 7.720000000000027
 
+(UN.FALMOUTH25  WTIS, UN.DARTMTH 13.8DART) ==> (Falmouth Wind Farm, Dartmouth Power Associates)
+Mean: -0.0906113387978142
+Standard Deviation: 0.5472284466326988
+Similarity: 0.9999254445791692
+Min: -40.459999999999994
+Max: 7.720000000000027
+
+(LD.CHELSEA 13.8, LD.MYSTIC  13.8) ==> (Forbes Park Wind, Mystic River 8 and 9)
+Mean: 0.09083674863387985
+Standard Deviation: 4.852482336944849
+Similarity: 0.9944485711649116
+Min: -145.32999999999998
+Max: 188.76999999999998
+
 (UN.BUCKSPRT18.0BKSP, UN.GRAHAM  46  MLFH) ==> (Fox Islands Wind - Vinalhaven, Maine Independence Station (Casco Bay))
 Mean: 0.25859517304189433
 Standard Deviation: 0.3896259860107887
@@ -62,12 +132,26 @@ Similarity: 0.9999821362699723
 Min: -1.25
 Max: 15.230000000000018
 
+(LD.PHILP_LN115, UN.RAILYARD23  MARB) ==> (Future Generation Wind (Mann Cranberry Farm), Salem Harbor Station NGCC)
+Mean: -3.141657559198543
+Standard Deviation: 12.968641562041164
+Similarity: 0.9583014878425766
+Min: -329.26
+Max: 11.879999999999995
+
 (LD.STALBANS34.5, LD.GE_CO_14115 1X LD) ==> (Georgia Mountain Community Wind Project, Pittsfield Generating Station)
 Mean: -0.8027197176684882
 Standard Deviation: 1.2027139319613716
 Similarity: 0.9996190050782531
 Min: -16.29000000000002
 Max: 34.47
+
+(LD.IPSWICH 115, UN.RAILYARD23  MARB) ==> (Gloucester Wind Plant, Salem Harbor Station NGCC)
+Mean: -0.09936475409836061
+Standard Deviation: 0.44615472243758064
+Similarity: 0.9999568785465617
+Min: -18.589999999999996
+Max: 8.629999999999995
 
 (UN.PARIS   34.5GRPW, UN.GR_RIDGE16  GRAN) ==> (Granite Reliable Power Windpark, Granite Ridge)
 Mean: -3.15029485428051
@@ -83,6 +167,13 @@ Similarity: 0.9997814448450691
 Min: -33.47
 Max: 29.680000000000064
 
+(UN.BULL_HL 34.5BLHW, UN.GRAHAM  46  MLFH) ==> (Hancock Wind Project, Maine Independence Station (Casco Bay))
+Mean: 0.27222905282331505
+Standard Deviation: 0.6270826280468881
+Similarity: 0.9999344260961656
+Min: -1.6000000000000227
+Max: 23.86999999999989
+
 (UN.HOOSAC  69  HOSW, LD.GE_CO_14115 1X LD) ==> (Hoosac Wind, Pittsfield Generating Station)
 Mean: -0.122797131147541
 Standard Deviation: 1.022449188110899
@@ -97,12 +188,54 @@ Similarity: 0.9998719265663992
 Min: -0.36000000000001364
 Max: 60.489999999999995
 
+(LD.IPSWICH 115, UN.RAILYARD23  MARB) ==> (Ipswich Municipal Wind Project, Salem Harbor Station NGCC)
+Mean: -0.09936475409836061
+Standard Deviation: 0.44615472243758064
+Similarity: 0.9999568785465617
+Min: -18.589999999999996
+Max: 8.629999999999995
+
+(LD.IPSWICH 115, UN.RAILYARD23  MARB) ==> (Ipswich Wind Project II, Salem Harbor Station NGCC)
+Mean: -0.09936475409836061
+Standard Deviation: 0.44615472243758064
+Similarity: 0.9999568785465617
+Min: -18.589999999999996
+Max: 8.629999999999995
+
 (UN.SMITH_HY6.9 SMTH, UN.GR_RIDGE16  GRAN) ==> (Jericho Mountain Wind Project, Granite Ridge)
 Mean: -3.1538888888888885
 Standard Deviation: 12.446894036145522
 Similarity: 0.9555673116486277
 Min: -218.24
 Max: 27.909999999999997
+
+(UN.KIBBY   34.5KIBY, UN.RUMFD_IP18.0RUMF) ==> (Kibby Mountain Wind Project, Rumford)
+Mean: -0.627172131147541
+Standard Deviation: 4.793086679061189
+Similarity: 0.9931586046863669
+Min: -164.91
+Max: 94.43
+
+(UN.JAY_T   46  KCW, UN.SHAWINGN13.8MPWR) ==> (Kingdom Community Wind (Lowell Mountain Wind), Masspower Cogen)
+Mean: -5.627067395264117
+Standard Deviation: 20.170353872649752
+Similarity: 0.8886431889230126
+Min: -275.19
+Max: 31.080000000000002
+
+(LD.BROOK_ST23, UN.EDGAR   18.0ED1A) ==> (Kingston Wind Independence Project, Fore River)
+Mean: 0.5093146630236792
+Standard Deviation: 1.340946183116422
+Similarity: 0.9996984795185095
+Min: -3.3700000000000045
+Max: 39.12999999999988
+
+(LD.BROOK_ST23, UN.EDGAR   18.0ED1A) ==> (Kingston Wind Project(No Fossil Fuels), Fore River)
+Mean: 0.5093146630236792
+Standard Deviation: 1.340946183116422
+Similarity: 0.9996984795185095
+Min: -3.3700000000000045
+Max: 39.12999999999988
 
 (UN.NORTH_RD34.5HEMP, UN.MILLENUM16  MILN) ==> (Lempster Mountain, Millennium Power)
 Mean: 1.4982137978142076
@@ -132,6 +265,13 @@ Similarity: 0.9775200233020801
 Min: -121.2
 Max: 2.920000000000016
 
+(LD.WINCHNDN69, UN.MILLENUM16  MILN) ==> (Mount Wachusett Community College, Millennium Power)
+Mean: 2.075928961748634
+Standard Deviation: 6.600550965194793
+Similarity: 0.9902185765367835
+Min: -12.909999999999997
+Max: 289.34000000000003
+
 (UN.FRNKLNSQ11.510CC, UN.FRNKLNSQ11.510CC) ==> (NBC Field's Point Wind Farm, Manchester Street)
 Mean: 0.0
 Standard Deviation: 0.0
@@ -153,6 +293,13 @@ Similarity: 0.9895567026011335
 Min: -20.319999999999993
 Max: 284.39
 
+(.Z.RHODEISLAND, UN.RISE    18.0RISE) ==> (North Kingstown Green (Green Greenville Wind), Rhode Island State Energy Center)
+Mean: 0.28382627504553737
+Standard Deviation: 0.7010643822711441
+Similarity: 0.9999293887644048
+Min: -1.6100000000000136
+Max: 43.720000000000006
+
 (UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Oakfield Wind Project (Evergreen II), Maine Independence Station (Casco Bay))
 Mean: -1.2255908469945358
 Standard Deviation: 8.559418848088931
@@ -167,12 +314,40 @@ Similarity: 0.9933510432305181
 Min: -187.0
 Max: 3.1799999999999784
 
+(LD.ELLSWRTH34.5, UN.GRAHAM  46  MLFH) ==> (Pisgah Mountain Wind - Clifton Wind, Maine Independence Station (Casco Bay))
+Mean: 0.3867679872495446
+Standard Deviation: 0.6525491333906167
+Similarity: 0.9999583447400913
+Min: -1.6899999999999977
+Max: 27.25999999999999
+
+(LD.BRAYTNPT115, UN.TIVERTON18.0TIVR) ==> (Portsmouth Wind, Tiverton)
+Mean: -0.3851058743169398
+Standard Deviation: 1.433729441610742
+Similarity: 0.9995899593115092
+Min: -56.21000000000001
+Max: 37.65
+
+(UN.ROXBURY 34.5RCHW, UN.RUMFD_IP18.0RUMF) ==> (Record Hill (Roxbury) Wind Farm, Rumford)
+Mean: 0.04515141165755918
+Standard Deviation: 0.9829297934725569
+Similarity: 0.9997184577834677
+Min: -0.060000000000002274
+Max: 44.730000000000004
+
 (UN.FLAGG_PD13.8PINE, UN.MILLENUM16  MILN) ==> (Richard F Wheeler (Princeton Wind), Millennium Power)
 Mean: 1.199261156648452
 Standard Deviation: 6.2912941418404555
 Similarity: 0.9898635688630643
 Min: -17.289999999999992
 Max: 285.15
+
+(UN.SEABROOK24.5SBRK, UN.NEW_ENER18.0NEWE) ==> (Richey Wind, Newington Energy Center)
+Mean: -0.020908469945355203
+Standard Deviation: 1.1089147141103854
+Similarity: 0.9996807229743476
+Min: -63.78
+Max: 12.129999999999882
 
 (UN.ROLLINS 34.5ROLL, UN.GRAHAM  46  MLFH) ==> (Rollins Wind Farm (Evergreen Wind Power III), Maine Independence Station (Casco Bay))
 Mean: -0.9438763661202184
@@ -181,12 +356,40 @@ Similarity: 0.9933510432305181
 Min: -187.0
 Max: 3.1799999999999784
 
+(UN.LUDDN_LN34.5SADW, UN.RUMFD_IP18.0RUMF) ==> (Saddleback Ridge Wind Project (Carthage Project), Rumford)
+Mean: 0.025735428051001756
+Standard Deviation: 0.997766383503194
+Similarity: 0.9997092802299392
+Min: -3.589999999999918
+Max: 44.69
+
+(LD.NORWELL 13.8, UN.RAILYARD23  MARB) ==> (Scituate Wind Project, Salem Harbor Station NGCC)
+Mean: -0.6677299635701274
+Standard Deviation: 6.009921844756867
+Similarity: 0.9912923073496964
+Min: -90.72
+Max: 67.74999999999999
+
+(LD.HARRIMAN69, LD.GE_CO_14115 1X LD) ==> (Searsburg Wind, Pittsfield Generating Station)
+Mean: 0.05201502732240437
+Standard Deviation: 1.015021239358946
+Similarity: 0.9997520521541123
+Min: -8.879999999999995
+Max: 44.25
+
 (UN.SHEFIELD34.5SHEF, UN.MILLENUM16  MILN) ==> (Sheffield Wind Project, Millennium Power)
 Mean: -4.185960837887068
 Standard Deviation: 22.000315680408505
 Similarity: 0.8725151110766726
 Min: -276.1
 Max: 275.39
+
+(UN.RUMFD_IP18.0RUMF, UN.RUMFD_IP18.0RUMF) ==> (Spruce Mountain (Woodstock ) Wind Project, Rumford)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
 
 (UN.OAKFIELD34.5OAKW, UN.GRAHAM  46  MLFH) ==> (Stetson Mountain Wind II, Maine Independence Station (Casco Bay))
 Mean: -1.2255908469945358
@@ -201,3 +404,73 @@ Standard Deviation: 8.559418848088931
 Similarity: 0.9775200233020801
 Min: -121.2
 Max: 2.920000000000016
+
+(LD.PHILP_LN115, UN.RAILYARD23  MARB) ==> (Taylors Point Wind Project, Salem Harbor Station NGCC)
+Mean: -3.141657559198543
+Standard Deviation: 12.968641562041164
+Similarity: 0.9583014878425766
+Min: -329.26
+Max: 11.879999999999995
+
+(UN.COBBLEMT69  COBB, UN.CDEC    13.8AETN) ==> (Town of Otis Wind, Capital District Energy Center Cogeneration)
+Mean: -0.04893556466302363
+Standard Deviation: 0.31650847133004
+Similarity: 0.999984331738089
+Min: -14.6099999999999
+Max: 2.6000000000000227
+
+(UN.OCEAN_ST13.8OSP1, UN.OCEAN_ST13.8OSP1) ==> (WED Coventry 1, Ocean State Power)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(UN.OCEAN_ST13.8OSP1, UN.OCEAN_ST13.8OSP1) ==> (WED Coventry 2, Ocean State Power)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(UN.OCEAN_ST13.8OSP1, UN.OCEAN_ST13.8OSP1) ==> (WED Coventry 3, Ocean State Power)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(UN.EXETER  115 EXTR, UN.LAKE_RD 21  LRD1) ==> (WED Coventry 4, Lake Road CC)
+Mean: 0.0671482240437159
+Standard Deviation: 0.9709964193217417
+Similarity: 0.999761970231536
+Min: -2.849999999999966
+Max: 65.63
+
+(UN.OCEAN_ST13.8OSP1, UN.OCEAN_ST13.8OSP1) ==> (WED Coventry 5, Ocean State Power)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(UN.OCEAN_ST13.8OSP1, UN.OCEAN_ST13.8OSP1) ==> (WED Coventry 6, Ocean State Power)
+Mean: 0.0
+Standard Deviation: 0.0
+Similarity: 1.0
+Min: 0.0
+Max: 0.0
+
+(.Z.RHODEISLAND, UN.RISE    18.0RISE) ==> (WED NK Green Wind Farm, Rhode Island State Energy Center)
+Mean: 0.28382627504553737
+Standard Deviation: 0.7010643822711441
+Similarity: 0.9999293887644048
+Min: -1.6100000000000136
+Max: 43.720000000000006
+
+(LD.BRAYTNPT115, UN.TIVERTON18.0TIVR) ==> (WED Portsmouth One Wind (New Portsmouth Wind), Tiverton)
+Mean: -0.3851058743169398
+Standard Deviation: 1.433729441610742
+Similarity: 0.9995899593115092
+Min: -56.21000000000001
+Max: 37.65

@@ -113,11 +113,15 @@ def build_agents(save_to_excel=False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Da
         criteria = ngpp[tech_type] == des_tech
         return ngpp[criteria]
 
+    # Drop duplicates
+    def filter_duplicates(dataframe, criteria=['Power Plant']) -> pd.DataFrame:
+        return dataframe.drop_duplicates(subset=[*criteria])
+
     # Clean the data, i.e. remove na values, and drop duplicates
     p_nodes_f = p_nodes_f.dropna()
     ngpp_f = filter_tech_ngpp(ngpp_f)
-    ngpp_f = bundle(ngpp_f)
-    wpp_f = bundle(wpp_f)
+    ngpp_f = filter_duplicates(ngpp_f)
+    wpp_f = filter_duplicates(wpp_f)
 
     # Print to excel file
     if save_to_excel:
@@ -234,7 +238,6 @@ def find_closest_pricing_node_to_agent(pnodesf=None, wppf=None, ngppf=None, to_e
     log.debug(f'WPP_Pairs {wpp_pricing_node_pairs}')
     log.debug(f'NGPP_Pairs {ngpp_pricing_node_pairs}')
 
-
     ##################################################################################
     pnodes_wpp_names_coords = wpp_pricing_node_pairs[:, 1:3]
     pnodes_ngpp_names_coords = ngpp_pricing_node_pairs[:, 1:3]
@@ -276,7 +279,7 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False, sa
     assert des_ngpps.size, 'Provide indices of desired NGPPs'
     assert use_pickle != save_pickle, 'Ensure that argument use_pickle boolean is opposite of argument save_pickle'
 
-    wpp_f, ngpp_f, p_nodes_f = build_agents()
+    wpp_f, ngpp_f, p_nodes_f = build_agents(save_to_excel=False)
 
     print('Currently in', os.getcwd())
 
@@ -320,8 +323,11 @@ def helper_main(des_wpps: np.array=[], des_ngpps: np.array=[], to_plot=False, sa
         helper_init_inter_node_pairings = helper_main_package['Initial inter_node_pairings']
         helper_final_inter_node_pairings = helper_main_package['Final inter_node_pairings']
 
+        # _, _ = construct_desired_tables(helper_final_inter_node_pairings, p_nodes_f, wpp_f, ngpp_f, use_pickle=True, plot=True, save_images=True, log_output=True)
+
         # Compute the distance between previous pricing nodes and new pricing nodes
-        distance_evolution = find_distances_between_pairings(helper_init_inter_node_pairings, helper_final_inter_node_pairings)
+        distance_evolution = find_distances_between_pairings(helper_init_inter_node_pairings, helper_final_inter_node_pairings, wpp_f, ngpp_f)
+
         write_to_excel('distance_evolution.xlsx', distance_evolution)
 
     print('Done...')
@@ -498,6 +504,7 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, pnodesf: pd.Da
                     plt.savefig(f'({node_wpp}, {node_ngpp})_({wpp}, {ngpp}).png')
 
         else:  # These nodes are not full datasets, collect and create table to drop
+            log.debug('Do not match in size...')
             if node_wpp_np.size != EXPECTED_NUMBER_OF_ENTRIES_FULL_YEAR:
                 empty_data_set_nodes.append([wpp, node_wpp])
 
@@ -512,18 +519,41 @@ def construct_desired_tables(inter_node_agent_pairings: np.array, pnodesf: pd.Da
     return pnodesf, empty_data_set_nodes
 
 
-def get_relevant_data(node_1_np: np.array, node_2_np: np.array) -> tuple:
+def get_relevant_data(node_1, node_2, modified = False) -> tuple:
     ''' Returns the mean, stdev, min and max of the difference between two arrays'''
 
-    difference_array = node_1_np - node_2_np
-    similarity = 1 - cosine(node_1_np, node_2_np)
+    def compute(n_1: np.array, n_2: np.array) -> tuple:
+        difference_array = n_1 - n_2
 
-    mean = np.mean(difference_array)
-    standard_dev = np.std(difference_array)
-    minimum = np.min(difference_array)
-    maximum = np.max(difference_array)
+        return difference_array, np.mean(difference_array), np.std(difference_array), 1 - cosine(n_1, n_2), np.min(difference_array), np.max(difference_array)
 
-    return difference_array, mean, standard_dev, similarity, minimum, maximum
+    if modified:
+        # node_1 and node_2 are of List[str]
+        node_pd_dict: Dict[str, pd.DataFrame] = pickle.load(open('node_pd_dict_pickle.p', 'rb'))
+        criteria = 'Locational Marginal Price'
+
+        mean_list = []
+        standard_dev_list = []
+        similarity_list = []
+        minimum_list = []
+        maximum_list = []
+
+        for wpp_node, ngpp_node in zip(node_1, node_2):
+            node_wpp_np = np.array([node_pd_dict[wpp_node][criteria]]).T
+            node_ngpp_np = np.array([node_pd_dict[ngpp_node][criteria]]).T
+
+            _, mean, standard_dev, similarity, minimum, maximum = compute(node_wpp_np, node_ngpp_np)
+
+            mean_list.append(mean)
+            standard_dev_list.append(standard_dev)
+            similarity_list.append(similarity)
+            minimum_list.append(minimum)
+            maximum_list.append(maximum)
+
+        return _, mean_list, standard_dev_list, similarity_list, minimum_list, maximum_list
+
+    else:
+        return compute(node_1, node_2)
 
 
 # -> MARK: Interpretation of the agents
@@ -533,7 +563,7 @@ def fractional_capacity():
     return None
 
 
-def find_distances_between_pairings(initial_pairing, final_pairing):
+def find_distances_between_pairings(initial_pairing, final_pairing, wppf, ngppf):
     '''<wpp> <pnode_long_wpp> <pnode_lat_wpp> <pnode_name_wpp> <ngpp> <pnode_long_ngpp> <pnode_lat_ngpp> <pnode_name_ngpp>'''
 
     initial_wpp = initial_pairing[:, 0]
@@ -543,8 +573,10 @@ def find_distances_between_pairings(initial_pairing, final_pairing):
     initial_ngpp_node = initial_pairing[:, 7]
     initial_ngpp_coords = initial_pairing[:, 5:7]
 
+    final_wpp = final_pairing[:, 0]
     final_wpp_node = final_pairing[:, 3]
     final_wpp_coords = final_pairing[:, 1:3]
+    final_ngpp = final_pairing[:, 4]
     final_ngpp_node = final_pairing[:, 7]
     final_ngpp_coords = final_pairing[:, 5:7]
 
@@ -554,26 +586,37 @@ def find_distances_between_pairings(initial_pairing, final_pairing):
     wpp_coordinates = np.apply_along_axis(lambda u: distance((u[0], u[1]), (u[2], u[3])).km, axis=1, arr=wpp_coordinates)
     ngpp_coordinates = np.apply_along_axis(lambda u: distance((u[0], u[1]), (u[2], u[3])).km, axis=1, arr=ngpp_coordinates)
 
-    # output = np.concatenate(
-    #     (initial_wpp, initial_ngpp, initial_wpp_node, final_wpp_node, wpp_coordinates, initial_ngpp_node, final_ngpp_node, ngpp_coordinates),
-    #     axis=1
-    # )
-    #
-    # # Returns the same vector, except with the changes -- as pd
-    # return convert_numpy_to_pd(output,
-    #                            ['Initial WPP', 'Initial NGPP', 'Initial WPP LMP', 'Final WPP LMP', 'Distance (km)', 'Initial NGPP LMP', 'Final NGPP LMP', 'Distance (km)']
-    #                            )
-    # columns = ['Initial WPP', 'Initial NGPP', 'Initial WPP LMP', 'Final WPP LMP', 'Distance (km)', 'Initial NGPP LMP', 'Final NGPP LMP', 'Distance (km)']
+    final_wpp_node = final_wpp_node.tolist()
+    final_ngpp_node = final_ngpp_node.tolist()
+
+    _, mean_list, standard_dev_list, similarity_list, minimum_list, maximum_list = get_relevant_data(final_wpp_node, final_ngpp_node, modified=True)
+
+    # Include the capacities
+    final_wpp = final_wpp.tolist()
+    final_ngpp = final_ngpp.tolist()
+    wpp_capacities_list = []
+    ngpp_capacities_list = []
+    for wpp, ngpp in zip(final_wpp, final_ngpp):
+        wpp_capacities_list.append(wppf[wppf["Power Plant"] == wpp]['Operating Capacity'].values[0])
+        ngpp_capacities_list.append(ngppf[ngppf["Power Plant"] == ngpp]['Operating Capacity'].values[0])
 
     output = {
-        'Initial WPP': initial_wpp.tolist(),
+        'Final WPP': initial_wpp.tolist(),
+        'Final WPP Capacity (MW)': wpp_capacities_list,
         'Initial NGPP': initial_ngpp.tolist(),
+        'Final NGPP': final_ngpp,
+        'Final NGPP Capacity (MW)': ngpp_capacities_list,
         'Initial WPP LMP': initial_wpp_node.tolist(),
-        'Final WPP LMP': final_wpp_node.tolist(),
+        'Final WPP LMP': final_wpp_node,
         'Distance WPP (km)': wpp_coordinates.tolist(),
         'Initial NGPP LMP': initial_ngpp_node.tolist(),
-        'Final NGPP LMP': final_ngpp_node.tolist(),
-        'Distance NGPP (km)': ngpp_coordinates.tolist()
+        'Final NGPP LMP': final_ngpp_node,
+        'Distance NGPP (km)': ngpp_coordinates.tolist(),
+        'Mean Final': mean_list,
+        'Standard Dev Final': standard_dev_list,
+        'Similarity Final': similarity_list,
+        'Minimum Final': minimum_list,
+        'Maximum Final': maximum_list
     }
 
     return pd.DataFrame.from_dict(output)
